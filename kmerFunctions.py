@@ -31,6 +31,7 @@ def get_kmer_windows(genome_path,
 
     cage_df = pd.read_csv(os.path.join(cage_path, cage_file), delimiter='\t',
 					  header=None)
+    print(cage_df.iloc[10])
 	
 	#get predictions and save predictions	
     pred_path = r'./cage_data'
