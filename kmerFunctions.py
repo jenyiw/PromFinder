@@ -5,6 +5,7 @@ Created on Tue Apr 11 14:44:15 2023
 @author: Asus
 """
 import os
+import re
 import pandas as pd
 import numpy as np
 
@@ -31,7 +32,6 @@ def get_kmer_windows(genome_path,
 
     cage_df = pd.read_csv(os.path.join(cage_path, cage_file), delimiter='\t',
 					  header=None)
-    print(cage_df.iloc[10])
 	
 	#get predictions and save predictions	
     pred_path = r'./cage_data'
@@ -160,7 +160,7 @@ def read_labels(kmer_folder):
     file_names = os.listdir(kmer_folder)
     label_list = []
     for file in file_names:
-        if not '.npy' in file:
+        if not re.match('chr\d+_label', file):
             continue
         label_arr = np.load(os.path.join(kmer_folder, file))
         label_list.append(label_arr)

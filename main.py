@@ -29,6 +29,8 @@ def main(classifier):
 	#get features and labels
     labels = kF.read_labels(kmer_folder)
     feature_arr = fF.get_features(kmer_folder)
+	
+	#check dimensions for column vectors
     if labels.ndim == 1:
         labels = labels.reshape(-1,1)
     if feature_arr.ndim == 1:
@@ -51,6 +53,8 @@ def main(classifier):
     pred_label = cF.predict_svm(test_data, model)	
 
     metrics_list = cF.metrics_svm(test_label, pred_label)
+	
+    print(metrics_list)
 
     return metrics_list
 
