@@ -11,9 +11,10 @@ import re
 import pandas as pd
 import numpy as np
 import kmerFunctions as kF
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
-
-def get_features(kmer_folder):
+def get_features(kmer_folder,
+				 window_size:int=600):
 	
     """
 	Get features for each kmer
@@ -31,43 +32,64 @@ def get_features(kmer_folder):
 	#get bendability scores
     bend_df = pd.read_csv(os.path.join(kmer_folder, 'bendability.csv'))
     bend_seq = bend_df['Sequence'].to_list()
-    bend_count = np.zeros((len(bend_seq)))
     bend_values = bend_df['lnp'].to_numpy()
+	
+	#get bendability scores
+    prop_df = pd.read_csv(os.path.join(kmer_folder, 'properties.csv'))
+    prop_seq = prop_df['Sequence'].to_list()
+	
+	#list of property values
+    prop_values = {'twist': prop_df['Twist'].to_list(), 
+				   'tilt': prop_df['Tilt'].to_list(), 
+				   'roll': prop_df['Roll'].to_list(), 
+				   'shift': prop_df['Shift'].to_list(), 
+				   'slide': prop_df['Slide'].to_list(), 
+				   'rise': prop_df['Rise'].to_list()
+				   }
+	
     for file in file_names:
         if not re.match('chr\d+_kmer', file):
             continue
 		
         print('Working on features for:', file)
         kmer_df = pd.read_csv(os.path.join(kmer_folder, file), header=None, index_col=None)
-        feature_arr = np.zeros((len(kmer_df), 2))
+        feature_arr = np.zeros((len(kmer_df), window_size, 7))
 		
         for i in range(len(kmer_df)):
-            kmer = kmer_df.iloc[i, 0]
-			
-            gc_count = 0
-            bd_sum = 0
+            kmer = kmer_df.iloc[i, 0].lower()
+            # print(kmer)
+
             for n in range(len(kmer)):
 				
 				#calculate GC score
-                if kmer[n] in ['c', 'g', 'C', 'G']:
-                    gc_count += 1
+                # if kmer[n] in ['c', 'g']:
+                #     feature_arr[i, n, 0] = 1
 					
                 if (n != len(kmer)-1):
                     m = kmer[n:n+2].upper()	
+					
                     if m in bend_seq:
-                        bend_count[bend_seq.index(m)] += 1				
+                        feature_arr[i, n, 0] = bend_values[bend_seq.index(m)]
+                    if m in prop_seq:
+                        for j, k in enumerate(prop_values.keys()):
+                            feature_arr[i, n, j+1] = prop_values[k][prop_seq.index(m)]	
 				
-            feature_arr[i, 0] = gc_count/len(kmer)
-            # feature_arr[i, 1] = calculate_tm(kmer)
-            feature_arr[i, 1] = np.sum(bend_count*bend_values)	
+            # feature_arr[i, 0] = gc_count/len(kmer)
+            # # feature_arr[i, 1] = calculate_tm(kmer)
+            # feature_arr[i, 1] = np.sum(bend_count*bend_values)	
 			
             if i % 100 == 0:
                 print(f'Processed {i} oligos')
+		
+        temp_feature_arr = feature_arr.reshape(-1, 7)
+        temp_feature_arr = MinMaxScaler().fit_transform(temp_feature_arr)
+        feature_arr = temp_feature_arr.reshape(-1, window_size, 7)
 			
-        np.save(os.path.join(kmer_folder, 'chr21_features.npy'), feature_arr)
+        np.save(os.path.join(kmer_folder, 'chr21_features_all.npy'), feature_arr)
 
     return feature_arr	
-		
+	
+	
 def calculate_gc(kmer):
 	
     """

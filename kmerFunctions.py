@@ -13,6 +13,8 @@ import numpy as np
 def get_kmer_windows(genome_path,
 					 cage_path,
 					 cage_file,
+					 kmer_path,
+					 window:int=600,
 					 ):
 	
     """
@@ -30,34 +32,39 @@ def get_kmer_windows(genome_path,
 		None
     """	
 
-    cage_df = pd.read_csv(os.path.join(cage_path, cage_file), delimiter='\t',
+    if cage_file.split('.')[-1] == 'bed':
+        cage_df = pd.read_csv(os.path.join(cage_path, cage_file), delimiter='\t',
 					  header=None)
-	
+        chr_col = 0
+    elif cage_file.split('.')[-1] == 'csv':
+        cage_df = pd.read_csv(os.path.join(cage_path, cage_file), delimiter=',',
+					  index_col=0)	
+        chr_col = '0'
+		
 	#get predictions and save predictions	
-    pred_path = r'./cage_data'
     pred_file = 'TSS.classification.hg38'
-    pred_df = pd.read_csv(os.path.join(pred_path, pred_file), delimiter='\t')
+    pred_df = pd.read_csv(os.path.join(cage_path, pred_file), delimiter='\t')
 	
 	#get list of chromosomes
-    chr_list_all = list(set(cage_df[0].tolist()))
-    chr_list = [x for x in chr_list_all if len(x) < 6] #Note there is a weird chrM
 
-    chr_list = ['chr21'] #temporary for trial
+    chr_list_all = list(set(cage_df[chr_col].tolist()))
+    chr_list = [x for x in chr_list_all if len(x) < 6] #Note there is a weird chrM
 
     #iterate over every chromosome 
     for ch in chr_list:
 		
         print(f'Working on chromosome: {ch}')
-        chr_cage_df = cage_df[cage_df[0] == ch]
+        chr_cage_df = cage_df[cage_df[chr_col] == ch]
         genome_file = os.path.join(genome_path, ch+'.fa')
 		
 		#data specifics for kmers
         kmer_list = []
-        kmer_path = r'./kmer_data'
+        positions_arr = []
         kmer_file = ch+'_kmer.csv'
+        positions_file = ch+'_positions.npy'
 		
 		#data specifics for kmers
-        label_arr = np.zeros((len(chr_cage_df)))
+        label_arr = []
         label_path = kmer_path
         label_file = ch+'_label.npy'
 	
@@ -68,21 +75,27 @@ def get_kmer_windows(genome_path,
             for k in range(len(chr_cage_df)):
 				
 				#get sequence of kmer
-                kmer = get_kmer(chr_cage_df.iloc[k, 1], item_length, line)					
+                kmer = get_kmer(chr_cage_df.iloc[k, 1], item_length, line, half_window=window//2)
+                if kmer.lower().count('n') > 0:
+                    continue
                 kmer_list.append(kmer)
+                positions_arr.append(chr_cage_df.iloc[k, 1])
 				
 				#get labels
                 label = get_label(chr_cage_df.iloc[k, 3], pred_df)
-                label_arr[k] = label
-				
+                label_arr.append(label)			
 
 		#save kmers
         kmer_df = pd.DataFrame({'sequence': kmer_list})             
         kmer_df.to_csv(os.path.join(kmer_path, kmer_file), header=None, index=None)
 				
 		#save labels
+        label_arr = np.array(label_arr)
         np.save(os.path.join(label_path, label_file), label_arr)
-				
+
+		#save positions
+        positions_arr = np.array(positions_arr)
+        np.save(os.path.join(label_path, positions_file), positions_arr)				
 
 def get_label(refTSSID, 
 				   pred_df):
@@ -110,7 +123,8 @@ def get_label(refTSSID,
 		
 def get_kmer(center_pos, 
 				item_length,
-				line):
+				line,
+				half_window:int=500):
 	
     """
 	Obtain kmer sequence for each CAGE position
@@ -128,46 +142,21 @@ def get_kmer(center_pos,
 			500 bp sequence around the CAGE proposed start site
     """	
 	
-    start_pos = center_pos - 250
-    end_pos = center_pos + 250
+    start_pos = center_pos - half_window
+    end_pos = center_pos + half_window
 			
     start_line = start_pos // item_length
     end_line = end_pos // item_length
     kmer = ''
     for j in range(start_line, end_line+1):
         if j == start_line:		
-            kmer += line[j][start_pos % item_length:]
+            kmer += (line[j][start_pos % item_length:]).strip()
         elif j == end_line:
-            kmer += line[j][:end_pos % item_length]	
+            kmer += (line[j][:end_pos % item_length]).strip()	
         else:
-            kmer += line[j]
+            kmer += (line[j]).strip()
 			
     return kmer
-
-def read_labels(kmer_folder):
-	
-    """
-	Load labels of samples
-	
-	Parameters:
-		kmer_folder: str
-			Folder where kmer data is stored
-	Returns:
-		label_arr: numpy array
-			Matrix of (# samples, ) of the label of each sample
-    """		
-	
-    file_names = os.listdir(kmer_folder)
-    label_list = []
-    for file in file_names:
-        if not re.match('chr\d+_label', file):
-            continue
-        label_arr = np.load(os.path.join(kmer_folder, file))
-        label_list.append(label_arr)
-			
-    label_arr = np.concatenate(label_list)	
-
-    return label_arr	
 
 		
 
