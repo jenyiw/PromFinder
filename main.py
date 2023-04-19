@@ -123,6 +123,8 @@ class PromFinder():
 		
         elif classifier == 'dl_svm': 
            train_data, train_label, val_data, val_label, train_phylo = dF.split_data(feature_arr, phylo_arr, label_arr, train_proportion=0.8, shuffle=True)
+		   
+           print(val_data.shape)
 
            cnnFunctions.create_CNN(model_path,
 					   train_data, train_label.reshape(-1,1),
@@ -219,11 +221,11 @@ if __name__ == "__main__":
     obj = PromFinder()
     obj.train(r'./train',
  			  'refTSS_v3.0_chr18.hg38.bed',
- 			  'rf',
+ 			  'dl_svm',
  			  use_existing=True)
     obj.predict(r'./test',
 			  'refTSS_v3.0_chr21.hg38.csv',
-			  'rf',
-			  r'./models/rf',
+			  'dl_svm',
+			  r'./models/dl_svm',
 			  use_existing=True)	
 	

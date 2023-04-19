@@ -14,7 +14,7 @@ def get_kmer_windows(genome_path,
 					 cage_path,
 					 cage_file,
 					 kmer_path,
-					 window:int=600,
+					 window:int=500,
 					 ):
 	
     """

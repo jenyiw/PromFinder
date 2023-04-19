@@ -55,9 +55,10 @@ def split_data(features_arr,
     train_label = label_arr[:split_index]
     train_phylo = phylo_arr[:split_index]
 	
+	
     if train_proportion != 1:
-        val_data = train_data[split_index:]	
-        val_label = train_label[split_index:]
+        val_data = features_arr[split_index:]	
+        val_label = label_arr[split_index:]
 		
     else:
         val_data = None		
