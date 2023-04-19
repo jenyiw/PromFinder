@@ -117,7 +117,7 @@ class PromFinder():
 			
             train_data = np.sum(feature_arr, axis=1)
 # 	            phylo_arr = train_phylo.reshape(-1,1)
-# 	            train_data = np.concatenate((train_data, phylo_arr), axis=1)
+            train_data = np.concatenate((train_data, phylo_arr.reshape(-1,1)), axis=1)
             save_model_path = os.path.join(model_path, 'svm_model.sav')
             cF.create_svm(train_data, label_arr.reshape(-1,), save_model_path)			
 		
@@ -140,7 +140,7 @@ class PromFinder():
         elif classifier == 'rf':
 
              train_data = np.sum(feature_arr, axis=1)			
-                # train_data = np.concatenate((train_data, phylo_list[0]), axis=1)
+             train_data = np.concatenate((train_data, phylo_arr.reshape(-1,1)), axis=1)
              save_model_path = os.path.join(model_path, 'rf_model.sav')				
              cF.create_rf(train_data, label_arr.reshape(-1,), save_model_path)
 
@@ -186,12 +186,12 @@ class PromFinder():
         if classifier == 'svm':
             test_data = np.sum(test_data, axis=1)	
             # phylo_arr = phylo_list[1].reshape(-1,1)		
-            # test_data = np.concatenate((test_data, phylo_arr), axis=1)		
+            test_data = np.concatenate((test_data, test_phylo.reshape(-1,1)), axis=1)		
             pred_label = cF.predict(test_data, os.path.join(model_path, 'svm_model.sav'))
 	
         elif classifier == 'rf':
             test_data = np.sum(test_data, axis=1)			
-            # test_data = np.concatenate((test_data, test_phylo), axis=1)		
+            test_data = np.concatenate((test_data, test_phylo.reshape(-1,1)), axis=1)	
             pred_label = cF.predict(test_data, os.path.join(model_path, 'rf_model.sav'))		
 	
         elif classifier == 'dl':
