@@ -50,7 +50,7 @@ def get_features(kmer_folder,
     for file in file_names:
         if not re.match('chr\d+_kmer', file):
             continue
-		
+        current_chromosome = re.search('chr\d+', file).group(0)
         print('Working on features for:', file)
         kmer_df = pd.read_csv(os.path.join(kmer_folder, file), header=None, index_col=None)
         feature_arr = np.zeros((len(kmer_df), window_size, 7))
@@ -85,7 +85,7 @@ def get_features(kmer_folder,
         temp_feature_arr = MinMaxScaler().fit_transform(temp_feature_arr)
         feature_arr = temp_feature_arr.reshape(-1, window_size, 7)
 			
-        np.save(os.path.join(kmer_folder, 'chr21_features_all.npy'), feature_arr)
+        np.save(os.path.join(kmer_folder, f'{current_chromosome}_features_all.npy'), feature_arr)
 
     return feature_arr	
 	
