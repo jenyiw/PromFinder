@@ -106,7 +106,7 @@ class PromFinder():
         print(f'Training {classifier}...')			
         if classifier == 'dl':
 	   
-            train_data, train_label, val_data, val_label, train_phylo = dF.split_data(feature_arr, phylo_arr, label_arr, train_proportion=0.8, shuffle=True)
+            train_data, train_label, val_data, val_label, train_phylo = dF.split_data(feature_arr, phylo_arr, label_arr, train_proportion=0.9, shuffle=True)
 			
             cnnFunctions.create_CNN(model_path,
 					   train_data, train_label.reshape(-1,1),
@@ -122,13 +122,11 @@ class PromFinder():
             cF.create_svm(train_data, label_arr.reshape(-1,), save_model_path)			
 		
         elif classifier == 'dl_svm': 
-           train_data, train_label, val_data, val_label, train_phylo = dF.split_data(feature_arr, phylo_arr, label_arr, train_proportion=0.8, shuffle=True)
-		   
-           print(val_data.shape)
+           train_data, train_label, val_data, val_label, train_phylo = dF.split_data(feature_arr, phylo_arr, label_arr, train_proportion=0.9, shuffle=True)
 
            cnnFunctions.create_CNN(model_path,
 					   train_data, train_label.reshape(-1,1),
-					   val_data, val_label.reshape(-1,1))
+					   val_data[0:1,...], val_label[0:1,...].reshape(-1,1))
 			
            pred_label = cnnFunctions.predict_CNN(model_path, train_data, train_label.reshape(-1,1),
 												  feed_svm=True)
@@ -146,7 +144,21 @@ class PromFinder():
              save_model_path = os.path.join(model_path, 'rf_model.sav')				
              cF.create_rf(train_data, label_arr.reshape(-1,), save_model_path)
 
+        elif classifier == 'dl_rf': 
+           train_data, train_label, val_data, val_label, train_phylo = dF.split_data(feature_arr, phylo_arr, label_arr, train_proportion=0.9, shuffle=True)
 
+#            cnnFunctions.create_CNN(model_path,
+# 					   train_data, train_label.reshape(-1,1),
+# 					   val_data[0:1,...], val_label[0:1,...].reshape(-1,1))
+			
+           pred_label = cnnFunctions.predict_CNN(model_path, train_data, train_label.reshape(-1,1),
+												  feed_svm=True)
+
+            #concatenate data
+           pred_label = np.concatenate((pred_label.reshape(-1,1), train_phylo.reshape(-1,1)), axis=1)
+           save_model_path = os.path.join(model_path, 'rf_model.sav')
+           cF.create_rf(pred_label, train_label.reshape(-1,), save_model_path)		
+		   
     def predict(self, 
 			  test_folder,
 			  cage_file_name,			  
@@ -186,8 +198,7 @@ class PromFinder():
         print(f'Testing {classifier}...')	
 		
         if classifier == 'svm':
-            test_data = np.sum(test_data, axis=1)	
-            # phylo_arr = phylo_list[1].reshape(-1,1)		
+            test_data = np.sum(test_data, axis=1)		
             test_data = np.concatenate((test_data, test_phylo.reshape(-1,1)), axis=1)		
             pred_label = cF.predict(test_data, os.path.join(model_path, 'svm_model.sav'))
 	
@@ -206,26 +217,37 @@ class PromFinder():
 			
 			#run SVM
             pred_label = np.concatenate((prob.reshape(-1,1), test_phylo.reshape(-1,1)), axis=1)
+            # pred_label = prob.reshape(-1,1)
             save_model_path = os.path.join(model_path, 'svm_model.sav')
             pred_label = cF.predict(pred_label, save_model_path)
 
+
+        elif classifier == 'dl_rf':
+		
+            prob = cnnFunctions.predict_CNN(model_path, test_data, test_label.reshape(-1,1))
+			
+			#run rf
+            pred_label = np.concatenate((prob.reshape(-1,1), test_phylo.reshape(-1,1)), axis=1)
+            save_model_path = os.path.join(model_path, 'rf_model.sav')
+            pred_label = cF.predict(pred_label, save_model_path)
+			
         metrics_list = cF.metrics(test_label, pred_label)
 	
         for m in metrics_list.keys():	
-            print(f'{m}: {metrics_list[m]}')
+            print(f'{m}: {metrics_list[m]:.2f}')
 
         return metrics_list, pred_label
 
 if __name__ == "__main__":
     os.chdir('..')	
-    obj = PromFinder()
+    obj = PromFinder(kmer_size=500)
     obj.train(r'./train',
- 			  'refTSS_v3.0_chr18.hg38.bed',
- 			  'dl_svm',
+ 			  'refTSS_v3.0_chr18.hg38.csv',
+ 			  'dl_rf',
  			  use_existing=True)
     obj.predict(r'./test',
-			  'refTSS_v3.0_chr21.hg38.csv',
-			  'dl_svm',
-			  r'./models/dl_svm',
+			  'refTSS_v3.0_chr21.hg38.bed',
+			  'dl_rf',
+			  r'./models/dl_rf',
 			  use_existing=True)	
 	

@@ -27,7 +27,7 @@ def split_data(features_arr,
 	   label_arr: numpy array
 		   Matrix of (# samples,) of predicted labels
 		train_proportion: float
-			Proportion of whole dataset to use for training
+			Proportion of whole dataset to use for training and not validation
 		shuffle: bool
 			Whether or not to shuffle the dataset
 	Returns:

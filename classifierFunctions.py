@@ -73,7 +73,7 @@ def create_rf(X, Y, output_path):
 			Classification model
 	"""	
 
-	model = RFC(n_estimators=100)
+	model = RFC(n_estimators=100, max_depth=3)
 	model.fit(X, Y)
 
 	#save model
