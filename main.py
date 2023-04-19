@@ -110,7 +110,7 @@ class PromFinder():
 			
             cnnFunctions.create_CNN(model_path,
 					   train_data, train_label.reshape(-1,1),
-					   val_data, val_label.reshape(-1,1))
+					   val_data[0:1,...], val_label[0:1,...].reshape(-1,1))
 			
 
         elif classifier == 'svm':
@@ -139,7 +139,7 @@ class PromFinder():
 			
         elif classifier == 'rf':
 
-             train_data = np.sum(feature_arr, axis=1)			
+             train_data = np.max(feature_arr, axis=1)			
              train_data = np.concatenate((train_data, phylo_arr.reshape(-1,1)), axis=1)
              save_model_path = os.path.join(model_path, 'rf_model.sav')				
              cF.create_rf(train_data, label_arr.reshape(-1,), save_model_path)
@@ -147,9 +147,9 @@ class PromFinder():
         elif classifier == 'dl_rf': 
            train_data, train_label, val_data, val_label, train_phylo = dF.split_data(feature_arr, phylo_arr, label_arr, train_proportion=0.9, shuffle=True)
 
-#            cnnFunctions.create_CNN(model_path,
-# 					   train_data, train_label.reshape(-1,1),
-# 					   val_data[0:1,...], val_label[0:1,...].reshape(-1,1))
+           cnnFunctions.create_CNN(model_path,
+					   train_data, train_label.reshape(-1,1),
+					   val_data[0:1,...], val_label[0:1,...].reshape(-1,1))
 			
            pred_label = cnnFunctions.predict_CNN(model_path, train_data, train_label.reshape(-1,1),
 												  feed_svm=True)
@@ -203,7 +203,7 @@ class PromFinder():
             pred_label = cF.predict(test_data, os.path.join(model_path, 'svm_model.sav'))
 	
         elif classifier == 'rf':
-            test_data = np.sum(test_data, axis=1)			
+            test_data = np.max(test_data, axis=1)			
             test_data = np.concatenate((test_data, test_phylo.reshape(-1,1)), axis=1)	
             pred_label = cF.predict(test_data, os.path.join(model_path, 'rf_model.sav'))		
 	
@@ -217,7 +217,6 @@ class PromFinder():
 			
 			#run SVM
             pred_label = np.concatenate((prob.reshape(-1,1), test_phylo.reshape(-1,1)), axis=1)
-            # pred_label = prob.reshape(-1,1)
             save_model_path = os.path.join(model_path, 'svm_model.sav')
             pred_label = cF.predict(pred_label, save_model_path)
 
@@ -240,14 +239,14 @@ class PromFinder():
 
 if __name__ == "__main__":
     os.chdir('..')	
-    obj = PromFinder(kmer_size=500)
+    obj = PromFinder(kmer_size=1000)
     obj.train(r'./train',
  			  'refTSS_v3.0_chr18.hg38.csv',
- 			  'dl_rf',
+ 			  'rf',
  			  use_existing=True)
     obj.predict(r'./test',
 			  'refTSS_v3.0_chr21.hg38.bed',
-			  'dl_rf',
-			  r'./models/dl_rf',
+			  'rf',
+			  r'./models/rf',
 			  use_existing=True)	
 	

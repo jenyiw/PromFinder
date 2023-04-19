@@ -59,20 +59,20 @@ def get_features(kmer_folder,
             kmer = kmer_df.iloc[i, 0].lower()
             # print(kmer)
 
-            for n in range(len(kmer)):
+            for n in range(1, len(kmer)):
 				
 				#calculate GC score
                 # if kmer[n] in ['c', 'g']:
                 #     feature_arr[i, n, 0] = 1
 					
-                if (n != len(kmer)-1):
-                    m = kmer[n:n+2].upper()	
+                    m = kmer[n-1:n+1].upper()	
 					
                     if m in bend_seq:
                         feature_arr[i, n, 0] = bend_values[bend_seq.index(m)]
+						
                     if m in prop_seq:
                         for j, k in enumerate(prop_values.keys()):
-                            feature_arr[i, n, j+1] = prop_values[k][prop_seq.index(m)]	
+                            feature_arr[i, n, j+1] = prop_values[k][prop_seq.index(m)] + feature_arr[i, n-1, j+1]
 				
             # feature_arr[i, 0] = gc_count/len(kmer)
             # # feature_arr[i, 1] = calculate_tm(kmer)

@@ -40,6 +40,7 @@ def get_phyloP_arr(phylo_path,
 				   kmer_folder,
 				   half_window:int=250):
 	
+    print('-'*40)	
     print('Getting phylo P data!')
 
     phylop_arr = np.zeros((len(positions),))
