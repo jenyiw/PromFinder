@@ -10,11 +10,26 @@ import os
 import re
 import numpy as np
 import json
-def get_phyloP_dict(phylo_path):
+
+def get_phyloP_dict(chromosome,
+		phylo_path):
+	
+    """
+	Converts phyloP wig files to dictionary
+	Parameters:
+		chromosome: int or str
+		phylo_path: str
+		  Folder with wigfile
+   Returns:
+	   None.
+	
+    """
 	
     scores = {}
+	
+    chromosome = str(chromosome)
 
-    file = r'chr21.phyloP46way.placental.wigfix'
+    file = fr'chr{chromosome}.phyloP46way.placental.wigfix'
     with open(os.path.join(phylo_path, file), 'r') as wig_file:
                 for line in wig_file:
                     
@@ -30,7 +45,7 @@ def get_phyloP_dict(phylo_path):
                             # print(score)
 
 		#save positions
-    with open('chr21.phyloP46way.placental.json', 'w') as fp:
+    with open(f'chr{chromosome}.phyloP46way.placental.json', 'w') as fp:
         json.dump(scores, fp)				
 
 
@@ -52,39 +67,40 @@ def get_phyloP_arr(phylo_path,
         if re.match(f'chr\d+.phyloP46way.placental.json', file):
             f = open(os.path.join(phylo_path, file))
             scores = json.load(f)
+            print(f'Processing phylo files for {current_chromosome}')
 	
-    start_positions = list(scores.keys())
+        start_positions = list(scores.keys())
 	
-    s = 0
-    last_checkpoint = 0
+        s = 0
+        last_checkpoint = 0
 	
-    for j in range(len(positions)):
+        for j in range(len(positions)):
 		
-        total_sum = 0		
-        current_position = int(positions[j] - half_window)
+            total_sum = 0		
+            current_position = int(positions[j] - half_window)
 		
-        for s in range(last_checkpoint, len(start_positions)):
-            temp_position = int(start_positions[s])
-            if temp_position > current_position:
-                continue
-            else:
-                last_checkpoint = s
-                total_sum = 0
-                missing_score = int(start_positions[s]) - current_position
-                total_sum += np.sum(scores[start_positions[s-1]][-missing_score:])
-                current_len = missing_score
-                if current_len >= half_window*2:
-                    break
-                if s < len(start_positions)-1:
-                    num_to_add = min(int(start_positions[s+1])-int(start_positions[s]), half_window*2-current_len)
+            for s in range(last_checkpoint, len(start_positions)):
+                temp_position = int(start_positions[s])
+                if temp_position > current_position:
+                    continue
                 else:
-                    total_sum += np.sum(scores[start_positions[s]])
-                    break
-                total_sum += np.sum(scores[start_positions[s]][:num_to_add])
+                    last_checkpoint = s
+                    total_sum = 0
+                    missing_score = int(start_positions[s]) - current_position
+                    total_sum += np.sum(scores[start_positions[s-1]][-missing_score:])
+                    current_len = missing_score
+                    if current_len >= half_window*2:
+                        break
+                    if s < len(start_positions)-1:
+                        num_to_add = min(int(start_positions[s+1])-int(start_positions[s]), half_window*2-current_len)
+                    else:
+                        total_sum += np.sum(scores[start_positions[s]])
+                        break
+                    total_sum += np.sum(scores[start_positions[s]][:num_to_add])
 
-        phylop_arr[j] = total_sum	
-        if j % 1000 == 0:
-            print(f'Processing {j} oligo')
+            phylop_arr[j] = total_sum	
+            if j % 1000 == 0:
+                print(f'Processing {j} oligo')
 				
 
 	

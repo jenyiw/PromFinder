@@ -66,7 +66,7 @@ def split_data(features_arr,
 	
     return train_data, train_label, val_data, val_label, train_phylo
 	
-def read_data(folder, file_suffix):
+def read_data(folder, chromosome_list, file_suffix):
 	
     """
 	Load data
@@ -80,16 +80,19 @@ def read_data(folder, file_suffix):
     """		
 	
     file_names = os.listdir(folder)
-    label_list = []
+    data_list = []
     for file in file_names:
         if not re.match(f'chr\d+_{file_suffix}', file):
             continue
-        label_arr = np.load(os.path.join(folder, file))
-        label_list.append(label_arr)
+        current_chromosome = re.search('chr\d+', file).group(0)
+        if current_chromosome not in chromosome_list:
+            continue
+        data_arr = np.load(os.path.join(folder, file))
+        data_list.append(data_arr)
 			
-    label_arr = np.concatenate(label_list)	
+    data_arr = np.concatenate(data_list)	
 
-    return label_arr	
+    return data_arr	
 
 def checkdir(folder_path, classifier):
 
@@ -122,6 +125,34 @@ def checkdir(folder_path, classifier):
     if not os.path.exists(phylop_path):
             os.mkdir(phylop_path)
             print('Please download PhyloP data.')
+			
+def check_specific_files(chromosome, kmer_path):
+
+    folder_path = os.path.dirname(kmer_path)
+	
+    pause = False
+	
+    #check phylo P path
+    genome_path = os.path.join(folder_path, 'genome_data')
+    files = os.listdir(genome_path)
+    if f'chr{chromosome}.fa' not in files:
+        pause = True  
+		
+    return pause
+
+def get_chrom_list(kmer_folder):
+	
+	files = os.listdir(kmer_folder)
+	chr_list = []
+	for f in files:
+		if re.match('chr\d+_features_all.npy'):
+			current_chromosome = re.search('chr\d+', f).group(0)
+			if re.match('chr\d+_phylop.py'):
+				chr_list.append(current_chromosome)
+				
+	return chr_list
+	
+				
 
 	 
 

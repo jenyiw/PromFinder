@@ -52,17 +52,17 @@ class PromFinder():
 		
         if not self.use_existing:
             kF.get_kmer_windows(genome_path, cage_path, cage_file, kmer_folder, window=self.kmer_size)
-            feature_arr = fF.get_features(kmer_folder, window_size=self.kmer_size)
+            fF.get_features(kmer_folder, window_size=self.kmer_size)
             positions_arr = dF.read_data(kmer_folder, 'positions')
             pF.get_phyloP_arr(phylop_path, positions_arr, kmer_folder, half_window=self.kmer_size//2)		
 
 	    #get features and labels
-        else:
-            feature_arr = dF.read_data(kmer_folder, 'features_all')
+        chromosome_list = dF.get_chrom_list(kmer_folder, phylop_path)
+        feature_arr = dF.read_data(kmer_folder, chromosome_list, 'features_all')
         
-        phylo_arr = dF.read_data(kmer_folder, 'phylop')
+        phylo_arr = dF.read_data(kmer_folder, chromosome_list, 'phylop')
 
-        labels = dF.read_data(kmer_folder, 'label')
+        labels = dF.read_data(kmer_folder, chromosome_list, 'label')
 	
         print('Number of oligos:' , len(labels))
         print('Number of features:', feature_arr.shape[-1])

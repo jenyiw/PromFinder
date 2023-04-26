@@ -28,14 +28,17 @@ def get_features(kmer_folder,
     """
 	
     file_names = os.listdir(kmer_folder)
+	
+    folder_path = os.path.dirname(kmer_folder)
+    struct_path = os.path.join(folder_path, 'struct_data')
     
 	#get bendability scores
-    bend_df = pd.read_csv(os.path.join(kmer_folder, 'bendability.csv'))
+    bend_df = pd.read_csv(os.path.join(struct_path, 'bendability.csv'))
     bend_seq = bend_df['Sequence'].to_list()
     bend_values = bend_df['lnp'].to_numpy()
 	
 	#get bendability scores
-    prop_df = pd.read_csv(os.path.join(kmer_folder, 'properties.csv'))
+    prop_df = pd.read_csv(os.path.join(struct_path, 'properties.csv'))
     prop_seq = prop_df['Sequence'].to_list()
 	
 	#list of property values
@@ -87,7 +90,6 @@ def get_features(kmer_folder,
 			
         np.save(os.path.join(kmer_folder, f'{current_chromosome}_features_all.npy'), feature_arr)
 
-    return feature_arr	
 	
 	
 def calculate_gc(kmer):

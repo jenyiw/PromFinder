@@ -8,6 +8,7 @@ import os
 import re
 import pandas as pd
 import numpy as np
+import dataFunctions as dF
 
 
 def get_kmer_windows(genome_path,
@@ -49,11 +50,21 @@ def get_kmer_windows(genome_path,
 
     chr_list_all = list(set(cage_df[chr_col].tolist()))
     chr_list = [x for x in chr_list_all if len(x) < 6] #Note there is a weird chrM
+	
+    print('Found list of chromosomes: {chr_list}')
 
     #iterate over every chromosome 
     for ch in chr_list:
 		
         print(f'Working on chromosome: {ch}')
+		
+		#check if all files exist for that chromosome, or else skip
+        pause = dF.check_specific_files(ch, kmer_path)
+		
+        if pause:
+            print(f'Missing file for {ch}')
+            continue
+		
         chr_cage_df = cage_df[cage_df[chr_col] == ch]
         genome_file = os.path.join(genome_path, ch+'.fa')
 		
