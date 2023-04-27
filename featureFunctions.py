@@ -75,13 +75,15 @@ def get_features(kmer_folder,
 						
                     if m in prop_seq:
                         for j, k in enumerate(prop_values.keys()):
-                            feature_arr[i, n, j+1] = prop_values[k][prop_seq.index(m)] + feature_arr[i, n-1, j+1]
+                            # print(prop_values[k][prop_seq.index(m)])
+                            # print(feature_arr[i, n-1, j+1])
+                            feature_arr[i, n, j+1] = float(prop_values[k][prop_seq.index(m)]) + feature_arr[i, n-1, j+1]
 				
             # feature_arr[i, 0] = gc_count/len(kmer)
             # # feature_arr[i, 1] = calculate_tm(kmer)
             # feature_arr[i, 1] = np.sum(bend_count*bend_values)	
 			
-            if i % 100 == 0:
+            if i % 1000 == 0:
                 print(f'Processed {i} oligos')
 		
         temp_feature_arr = feature_arr.reshape(-1, 7)

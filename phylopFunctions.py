@@ -52,6 +52,7 @@ def get_phyloP_dict(chromosome,
 
 def get_phyloP_arr(phylo_path, 
 				   positions,
+				   chromosome,
 				   kmer_folder,
 				   half_window:int=250):
 	
@@ -59,22 +60,21 @@ def get_phyloP_arr(phylo_path,
     print('Getting phylo P data!')
 
     phylop_arr = np.zeros((len(positions),))
+    print(phylop_arr.shape)
     file_names = os.listdir(phylo_path)
 
 
-    for file in file_names:
-        current_chromosome = re.search('chr\d+', file).group(0)
-        if re.match(f'chr\d+.phyloP46way.placental.json', file):
-            f = open(os.path.join(phylo_path, file))
+    file = chromosome+'.phyloP46way.placental.json'
+    with open(os.path.join(phylo_path, file), 'r') as f:
             scores = json.load(f)
-            print(f'Processing phylo files for {current_chromosome}')
+            print(f'Processing phylo files for {chromosome}')
 	
-        start_positions = list(scores.keys())
+    start_positions = list(scores.keys())
 	
-        s = 0
-        last_checkpoint = 0
+    s = 0
+    last_checkpoint = 0
 	
-        for j in range(len(positions)):
+    for j in range(len(positions)):
 		
             total_sum = 0		
             current_position = int(positions[j] - half_window)
@@ -105,9 +105,10 @@ def get_phyloP_arr(phylo_path,
 
 	
     #save positions
-    np.save(os.path.join(kmer_folder, current_chromosome+'_phylop.npy'), phylop_arr)				
+    np.save(os.path.join(kmer_folder, chromosome+'_phylop.npy'), phylop_arr)				
 							
     return
 
-# get_phyloP_dict()
+# p_path = r'C:\Users\Asus\OneDrive\Documents\YEAR 1\Bioinformatics Practicuum\human\phyloP_data'
+# get_phyloP_dict(16, p_path)
 		

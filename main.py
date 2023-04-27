@@ -10,7 +10,7 @@ import os
 import pickle
 import numpy as np
 import classifierFunctions as cF
-import kmerFunctions as kF
+import kmerFunctions_v2 as kF
 import dataFunctions as dF
 import featureFunctions as fF
 import phylopFunctions as pF
@@ -50,19 +50,23 @@ class PromFinder():
         genome_path = os.path.join(folder_path, 'genome_data')		
         phylop_path = os.path.join(folder_path, 'phyloP_data')
 		
+        chromosome_list = dF.get_chrom_list(kmer_folder)
+		
         if not self.use_existing:
             kF.get_kmer_windows(genome_path, cage_path, cage_file, kmer_folder, window=self.kmer_size)
             fF.get_features(kmer_folder, window_size=self.kmer_size)
-            positions_arr = dF.read_data(kmer_folder, 'positions')
-            pF.get_phyloP_arr(phylop_path, positions_arr, kmer_folder, half_window=self.kmer_size//2)		
+            # for ch in chromosome_list:
+            #     positions_arr = dF.read_data(kmer_folder, [ch], 'positions')
+            #     pF.get_phyloP_arr(phylop_path, positions_arr, ch, kmer_folder, half_window=self.kmer_size//2)		
 
 	    #get features and labels
-        chromosome_list = dF.get_chrom_list(kmer_folder, phylop_path)
         feature_arr = dF.read_data(kmer_folder, chromosome_list, 'features_all')
         
         phylo_arr = dF.read_data(kmer_folder, chromosome_list, 'phylop')
 
         labels = dF.read_data(kmer_folder, chromosome_list, 'label')
+		
+        print(len(labels))
 	
         print('Number of oligos:' , len(labels))
         print('Number of features:', feature_arr.shape[-1])
@@ -240,13 +244,13 @@ class PromFinder():
 if __name__ == "__main__":
     os.chdir('..')	
     obj = PromFinder(kmer_size=1000)
-    obj.train(r'./train',
- 			  'refTSS_v3.0_chr18.hg38.csv',
+    obj.train(r'./human',
+ 			  'refTSS_v3.0_human_coordinate.hg38.bed',
  			  'rf',
- 			  use_existing=True)
-    obj.predict(r'./test',
-			  'refTSS_v3.0_chr21.hg38.bed',
-			  'rf',
-			  r'./models/rf',
-			  use_existing=True)	
+ 			  use_existing=False)
+#     obj.predict(r'./mouse',
+# 			  'refTSS_v3.0_chr21.hg38.bed',
+# 			  'rf',
+# 			  r'./models/rf',
+# 			  use_existing=False)	
 	
