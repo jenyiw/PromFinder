@@ -62,11 +62,10 @@ class PromFinder():
 	    #get features and labels
         feature_arr = dF.read_data(kmer_folder, chromosome_list, 'features_all')
         
-        phylo_arr = dF.read_data(kmer_folder, chromosome_list, 'phylop')
+        # phylo_arr = dF.read_data(kmer_folder, chromosome_list, 'phylop')
 
         labels = dF.read_data(kmer_folder, chromosome_list, 'label')
-		
-        print(len(labels))
+        phylo_arr = np.zeros_like(labels)		
 	
         print('Number of oligos:' , len(labels))
         print('Number of features:', feature_arr.shape[-1])
@@ -121,7 +120,7 @@ class PromFinder():
 			
             train_data = np.sum(feature_arr, axis=1)
 # 	            phylo_arr = train_phylo.reshape(-1,1)
-            train_data = np.concatenate((train_data, phylo_arr.reshape(-1,1)), axis=1)
+            # train_data = np.concatenate((train_data, phylo_arr.reshape(-1,1)), axis=1)
             save_model_path = os.path.join(model_path, 'svm_model.sav')
             cF.create_svm(train_data, label_arr.reshape(-1,), save_model_path)			
 		
@@ -136,15 +135,16 @@ class PromFinder():
 												  feed_svm=True)
 
             #concatenate data
-           pred_label = np.concatenate((pred_label.reshape(-1,1), train_phylo.reshape(-1,1)), axis=1)
+           sum_data = np.sum(feature_arr, axis=1)
+           pred_label = np.concatenate((pred_label.reshape(-1,1), sum_data.reshape(-1,1)), axis=1)
            save_model_path = os.path.join(model_path, 'svm_model.sav')
            cF.create_svm(pred_label, train_label.reshape(-1,), save_model_path)		
 
 			
         elif classifier == 'rf':
 
-             train_data = np.max(feature_arr, axis=1)			
-             train_data = np.concatenate((train_data, phylo_arr.reshape(-1,1)), axis=1)
+             train_data = np.sum(feature_arr, axis=1)			
+             # train_data = np.concatenate((train_data, phylo_arr.reshape(-1,1)), axis=1)
              save_model_path = os.path.join(model_path, 'rf_model.sav')				
              cF.create_rf(train_data, label_arr.reshape(-1,), save_model_path)
 
@@ -159,7 +159,8 @@ class PromFinder():
 												  feed_svm=True)
 
             #concatenate data
-           pred_label = np.concatenate((pred_label.reshape(-1,1), train_phylo.reshape(-1,1)), axis=1)
+           sum_data = np.sum(feature_arr, axis=1)           			
+           pred_label = np.concatenate((pred_label.reshape(-1,1), sum_data.reshape(-1,1)), axis=1)
            save_model_path = os.path.join(model_path, 'rf_model.sav')
            cF.create_rf(pred_label, train_label.reshape(-1,), save_model_path)		
 		   
@@ -203,12 +204,12 @@ class PromFinder():
 		
         if classifier == 'svm':
             test_data = np.sum(test_data, axis=1)		
-            test_data = np.concatenate((test_data, test_phylo.reshape(-1,1)), axis=1)		
+            # test_data = np.concatenate((test_data, test_phylo.reshape(-1,1)), axis=1)		
             pred_label = cF.predict(test_data, os.path.join(model_path, 'svm_model.sav'))
 	
         elif classifier == 'rf':
-            test_data = np.max(test_data, axis=1)			
-            test_data = np.concatenate((test_data, test_phylo.reshape(-1,1)), axis=1)	
+            test_data = np.sum(test_data, axis=1)			
+            # test_data = np.concatenate((test_data, test_phylo.reshape(-1,1)), axis=1)	
             pred_label = cF.predict(test_data, os.path.join(model_path, 'rf_model.sav'))		
 	
         elif classifier == 'dl':
@@ -220,7 +221,8 @@ class PromFinder():
             prob = cnnFunctions.predict_CNN(model_path, test_data, test_label.reshape(-1,1))
 			
 			#run SVM
-            pred_label = np.concatenate((prob.reshape(-1,1), test_phylo.reshape(-1,1)), axis=1)
+            sum_data = np.sum(test_data, axis=1)			
+            pred_label = np.concatenate((prob.reshape(-1,1), sum_data.reshape(-1,1)), axis=1)
             save_model_path = os.path.join(model_path, 'svm_model.sav')
             pred_label = cF.predict(pred_label, save_model_path)
 
@@ -230,7 +232,8 @@ class PromFinder():
             prob = cnnFunctions.predict_CNN(model_path, test_data, test_label.reshape(-1,1))
 			
 			#run rf
-            pred_label = np.concatenate((prob.reshape(-1,1), test_phylo.reshape(-1,1)), axis=1)
+            sum_data = np.sum(test_data, axis=1)			
+            pred_label = np.concatenate((prob.reshape(-1,1), sum_data.reshape(-1,1)), axis=1)
             save_model_path = os.path.join(model_path, 'rf_model.sav')
             pred_label = cF.predict(pred_label, save_model_path)
 			
@@ -247,10 +250,10 @@ if __name__ == "__main__":
     obj.train(r'./human',
  			  'refTSS_v3.0_human_coordinate.hg38.bed',
  			  'rf',
- 			  use_existing=False)
-#     obj.predict(r'./mouse',
-# 			  'refTSS_v3.0_chr21.hg38.bed',
-# 			  'rf',
-# 			  r'./models/rf',
-# 			  use_existing=False)	
+ 			  use_existing=True)
+    # obj.predict(r'./mouse',
+ 			#   'refTSS_v3.0_chr21.hg38.bed',
+ 			#   'rf',
+ 			#   r'./models/rf',
+ 			#   use_existing=False)	
 	
