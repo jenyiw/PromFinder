@@ -141,7 +141,7 @@ def train_model(model, train_loader, val_loader):
             optimizer.zero_grad()
 
             # forward + backward + optimize
-            predicted, _ = model(inputs)     
+            predicted = model(inputs)     
             loss = criterion(predicted, labels)
 			  
             #Record losses
