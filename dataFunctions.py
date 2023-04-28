@@ -141,12 +141,12 @@ def check_specific_files(chromosome, kmer_path):
 		
     return pause
 
-def get_chrom_list(kmer_folder):
+def get_chrom_list(genome_folder):
 	
-	files = os.listdir(kmer_folder)
+	files = os.listdir(genome_folder)
 	chr_list = []
 	for f in files:
-		if re.match('chr\d+_features_all.npy', f):
+		if re.match('chr\d+.fa', f):
 			current_chromosome = re.search('chr\d+', f).group(0)
 			chr_list.append(current_chromosome)			
 # 			if re.match('chr\d+_phylop.npy', f):

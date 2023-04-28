@@ -11,12 +11,14 @@ import numpy as np
 import dataFunctions as dF
 import get_background as get_background
 
+import time
 
 def get_kmer_windows(genome_path,
 					 cage_path,
 					 cage_file,
 					 kmer_path,
 					 window:int=500,
+					 train:bool=True,
 					 ):
 	
     """
@@ -34,9 +36,16 @@ def get_kmer_windows(genome_path,
 		None
     """	
 
-    cage_df = pd.read_csv(os.path.join(cage_path, cage_file), delimiter='\t',
+    if train:
+        cage_df = pd.read_csv(os.path.join(cage_path, cage_file), delimiter='\t',
 					  header=None)
-    chr_col = 0
+        chr_col = 0
+		
+    else:
+        cage_df = pd.read_csv(os.path.join(cage_path, cage_file), delimiter=',',
+					  )
+        chr_col = 'chr'	
+
 		
 # 	#get predictions and save predictions	
 #     pred_file = 'TSS.classification.hg38'
@@ -96,11 +105,12 @@ def get_kmer_windows(genome_path,
         label_arr = np.ones((len(positions_arr),))
 				
 		#get background samples
-        print('Getting background samples')
-        drawn_positions = get_background.get_background(genome_file, os.path.join(cage_path, cage_file), ch, 1, window, len(chr_cage_df), chr_cage_df.iloc[:, 1].to_list())
+        if train:
+            print('Getting background samples')
+            drawn_positions = get_background.get_background(genome_file, os.path.join(cage_path, cage_file), ch, 1, window, len(chr_cage_df), chr_cage_df.iloc[:, 1].to_list())
 		
-        neg_positions_arr = []
-        for k in range(len(drawn_positions)):
+            neg_positions_arr = []
+            for k in range(len(drawn_positions)):
 				#get sequence of negative kmer and add to previous list
                 kmer = get_kmer(drawn_positions[k], item_length, line, half_window=window//2)
                 if kmer.lower().count('n') > 0:
@@ -108,21 +118,22 @@ def get_kmer_windows(genome_path,
                 kmer_list.append(kmer)	
                 neg_positions_arr.append(drawn_positions[k])
 				
-        neg_positions_arr = np.array(neg_positions_arr)
+            neg_positions_arr = np.array(neg_positions_arr)
 			
-        negative_labels = np.zeros_like(neg_positions_arr)		
+            negative_labels = np.zeros_like(neg_positions_arr)
+			
+			#concatenate to positive samples
+            label_arr = np.concatenate((label_arr, negative_labels))
+            positions_arr = np.concatenate((positions_arr, neg_positions_arr))
 
 		#save kmers
-        print(len(kmer_list))
         kmer_df = pd.DataFrame({'sequence': kmer_list})             
         kmer_df.to_csv(os.path.join(kmer_path, kmer_file), header=None, index=None)
 				
 		#save labels
-        label_arr = np.concatenate((label_arr, negative_labels))
         np.save(os.path.join(label_path, label_file), label_arr)
 
 		#save positions
-        positions_arr = np.concatenate((positions_arr, neg_positions_arr))
         np.save(os.path.join(label_path, positions_file), positions_arr)
 				
 
@@ -176,6 +187,11 @@ def get_kmer(center_pos,
 			
     start_line = start_pos // item_length
     end_line = end_pos // item_length
+
+	
+    if end_line+1 > len(line):
+        return 'n'
+	
     kmer = ''
     for j in range(start_line, end_line+1):
         if j == start_line:		
@@ -184,7 +200,20 @@ def get_kmer(center_pos,
             kmer += (line[j][:end_pos % item_length]).strip()	
         else:
             kmer += (line[j]).strip()
+
+	
+    # kmer_list = [] 
+    # for j in range(start_line, end_line+1):
+    #     if j == start_line:		
+    #         kmer_list.append((line[j][start_pos % item_length:]).strip())
+        # elif j == end_line:
+        #     kmer_list.append((line[j][:end_pos % item_length]).strip())
+        # else:
+        #     kmer_list.append((line[j]).strip())
 			
+    # kmer = ''.join(kmer_list)
+
+
     return kmer
 
 		

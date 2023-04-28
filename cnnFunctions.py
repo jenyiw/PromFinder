@@ -28,11 +28,9 @@ class CNN(nn.Module):
         self.drop = nn.Dropout(0.1)
 		
     def forward(self, x):
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.batchn1(x)
+        x = self.pool(self.batchn1(F.relu(self.conv1(x))))
         x = self.drop(x)
-        x = self.pool(F.relu(self.conv2(x)))
-        x = self.batchn2(x)		
+        x = self.pool(self.batchn2(F.relu(self.conv2(x))))	
         x = self.drop(x)		
         x = torch.flatten(x, 1) # flatten all dimensions except batch
         # self.fc1 = nn.Linear(x.shape[1], 10)	
@@ -170,8 +168,8 @@ def predict_CNN(save_path, test_data, test_label, feed_svm:bool=False):
     model.eval()	
     loss, acc, predicted = test_model(model, test_loader, feed_svm=feed_svm)
 	
-    print(f'Loss: {loss:.2f}',
-	      f'Accuracy: {acc:.2f}')
+    print(f'CNN Loss: {loss:.2f}',
+	      f'CNN Accuracy: {acc:.2f}')
 	
     return predicted
 	
