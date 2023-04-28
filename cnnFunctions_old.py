@@ -33,6 +33,7 @@ class CNN(nn.Module):
         x = self.pool(self.batchn2(F.relu(self.conv2(x))))	
         x = self.drop(x)		
         x = torch.flatten(x, 1) # flatten all dimensions except batch
+        print(x.shape)
         # self.fc1 = nn.Linear(x.shape[1], 10)	
         x = self.fc1(x)		
         x = self.fc2(x)		
@@ -63,7 +64,7 @@ class hybrid_CNN(nn.Module):
         x_out = self.fc1(x)		
         x = self.fc2(x_out)		
         x = F.sigmoid(x)		
-        return x, x_out
+        return x
 
 
 def accuracy(pred_y, y):
@@ -93,14 +94,12 @@ def test_model(model, loader,
     total_loss = 0
     acc = 0
     pred_list = np.zeros((len(loader)))
-    fl_list = []
 
     with torch.no_grad():
         for i, data in enumerate(loader):
 			
             inputs, labels = data
             predicted, x_out = model(inputs)
-            fl_list.append(x_out.detach().numpy())
             loss = criterion(predicted, labels)
             total_loss += loss.detach().numpy() / len(loader)
             predicted_np = np.rint(predicted.detach().numpy())
@@ -115,7 +114,7 @@ def test_model(model, loader,
 
     model.train()
 
-    return total_loss, acc, pred_list, fl_list
+    return total_loss, acc, pred_list
 
 
 def train_model(model, train_loader, val_loader):
@@ -141,7 +140,7 @@ def train_model(model, train_loader, val_loader):
             optimizer.zero_grad()
 
             # forward + backward + optimize
-            predicted, _ = model(inputs)     
+            predicted = model(inputs)     
             loss = criterion(predicted, labels)
 			  
             #Record losses
@@ -192,16 +191,15 @@ def predict_CNN(save_path, test_data, test_label, feed_svm:bool=False):
     if feed_svm == False:
         print('Testing model')
     test_loader = data_transform(test_data, test_label, batch_size=1)	
-    model = hybrid_CNN()
+    model = CNN()
     model.load_state_dict(torch.load(os.path.join(save_path, 'model')))
     model.eval()	
-    loss, acc, predicted, x_out_list = test_model(model, test_loader, feed_svm=feed_svm)
-    x_out_list = np.concatenate(x_out_list, axis=0)
+    loss, acc, predicted = test_model(model, test_loader, feed_svm=feed_svm)
 	
     print(f'CNN Loss: {loss:.2f}',
 	      f'CNN Accuracy: {acc:.2f}')
 	
-    return predicted, x_out_list
+    return predicted
 	
 	
 

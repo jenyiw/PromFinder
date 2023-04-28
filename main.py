@@ -129,20 +129,19 @@ class PromFinder():
         elif classifier == 'dl_svm': 
            train_data, train_label, val_data, val_label, train_phylo = dF.split_data(feature_arr, phylo_arr, label_arr, train_proportion=0.9, shuffle=True)
 
-#            cnnFunctions.create_CNN(model_path,
-# 					   train_data, train_label.reshape(-1,1),
-# 					   val_data[0:1,...], val_label[0:1,...].reshape(-1,1))
+           cnnFunctions.create_CNN(model_path,
+					   train_data, train_label.reshape(-1,1),
+					   val_data[0:1,...], val_label[0:1,...].reshape(-1,1))
 			
-           pred_label = cnnFunctions.predict_CNN(model_path, train_data, train_label.reshape(-1,1),
+           pred_label, x_out = cnnFunctions.predict_CNN(model_path, train_data, train_label.reshape(-1,1),
 												  feed_svm=True)
-           print(pred_label.shape)
-           print(train_data.shape)
+
             #concatenate data
-           sum_data = np.max(train_data, axis=1)
-           pred_label = np.concatenate((pred_label.reshape(-1,1), sum_data), axis=1)
-           print(pred_label.shape)
+           # sum_data = np.max(train_data, axis=1)
+           # pred_label = np.concatenate((pred_label.reshape(-1,1), sum_data), axis=1)
+
            save_model_path = os.path.join(model_path, 'svm_model.sav')
-           cF.create_svm(pred_label, train_label.reshape(-1,), save_model_path)		
+           cF.create_svm(x_out, train_label.reshape(-1,), save_model_path)		
 
 			
         elif classifier == 'rf':
@@ -159,14 +158,14 @@ class PromFinder():
 					   train_data, train_label.reshape(-1,1),
 					   val_data[0:1,...], val_label[0:1,...].reshape(-1,1))
 			
-           pred_label = cnnFunctions.predict_CNN(model_path, train_data, train_label.reshape(-1,1),
+           pred_label, x_out = cnnFunctions.predict_CNN(model_path, train_data, train_label.reshape(-1,1),
 												  feed_svm=True)
 
             #concatenate data
-           sum_data = np.max(train_data, axis=1)           			
-           pred_label = np.concatenate((pred_label.reshape(-1,1), sum_data), axis=1)
+           # sum_data = np.max(train_data, axis=1)           			
+           # pred_label = np.concatenate((pred_label.reshape(-1,1), sum_data), axis=1)
            save_model_path = os.path.join(model_path, 'rf_model.sav')
-           cF.create_rf(pred_label, train_label.reshape(-1,), save_model_path)		
+           cF.create_rf(x_out, train_label.reshape(-1,), save_model_path)		
 		   
     def predict(self, 
 			  test_folder,
@@ -222,25 +221,25 @@ class PromFinder():
 
         elif classifier == 'dl_svm':
 		
-            prob = cnnFunctions.predict_CNN(model_path, test_data, test_label.reshape(-1,1))
+            prob, x_out = cnnFunctions.predict_CNN(model_path, test_data, test_label.reshape(-1,1))
 
 			
 			#run SVM
-            sum_data = np.max(test_data, axis=1)			
-            pred_label = np.concatenate((prob.reshape(-1,1), sum_data), axis=1)
+            # sum_data = np.max(test_data, axis=1)			
+            # pred_label = np.concatenate((prob.reshape(-1,1), sum_data), axis=1)
             save_model_path = os.path.join(model_path, 'svm_model.sav')
-            pred_label = cF.predict(pred_label, save_model_path)
+            pred_label = cF.predict(x_out, save_model_path)
 
 
         elif classifier == 'dl_rf':
 		
-            prob = cnnFunctions.predict_CNN(model_path, test_data, test_label.reshape(-1,1))
+            prob, x_out = cnnFunctions.predict_CNN(model_path, test_data, test_label.reshape(-1,1))
 			
 			#run rf
-            sum_data = np.max(test_data, axis=1)			
-            pred_label = np.concatenate((prob.reshape(-1,1), sum_data), axis=1)
+            # sum_data = np.max(test_data, axis=1)			
+            # pred_label = np.concatenate((prob.reshape(-1,1), sum_data), axis=1)
             save_model_path = os.path.join(model_path, 'rf_model.sav')
-            pred_label = cF.predict(pred_label, save_model_path)
+            pred_label = cF.predict(x_out, save_model_path)
 			
         metrics_list = cF.metrics(test_label, pred_label)
 	
@@ -256,10 +255,10 @@ class PromFinder():
 if __name__ == "__main__":
     os.chdir('..')	
     obj = PromFinder(kmer_size=1000)
-    # obj.train(r'./human',
- 			#   'refTSS_v3.0_human_coordinate.hg38.bed',
- 			#   'dl_svm',
- 			#   use_existing=True)
+    obj.train(r'./human',
+ 			  'refTSS_v3.0_human_coordinate.hg38.bed',
+ 			  'dl_svm',
+ 			  use_existing=True)
     metrics_list, pred_label = obj.predict(r'./mouse',
 										  'mouse_chr19_test.csv',
 											'dl_svm',
