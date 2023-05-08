@@ -32,16 +32,17 @@ def read_fasta(path):
 # print(len(read_fasta(genome_path)))
 
 def get_background(genome_path, refTSS_path, chr_n, seed, window_size, num_positions, start_sites):
-    random.seed(seed)
+    # random.seed(seed)
     # start_sites = []
 
     # with open(refTSS_path, "r") as f:
     #     for line in f:
+    #         print(line)
     #         if line.startswith(chr_n):  # Replace "chr1" with the chromosome you want to extract
     #             fields = line.strip().split("\t")
     #             chrom, start = fields[0], int(fields[1])
     #             start_sites.append(start)
-    # #             print(f"Chromosome: {chrom}, Start: {start}")
+    #             print(f"Chromosome: {chrom}, Start: {start}")
     # print(len(start_sites))
 
     # Avoid positions around starting sites
@@ -69,7 +70,7 @@ def get_background(genome_path, refTSS_path, chr_n, seed, window_size, num_posit
                 avoid.add(i)
         if len(drawn_positions) % 1000 == 0:
             print(f'Selcted {len(drawn_positions)} sequences')
-
+	
     return drawn_positions
 
 
@@ -78,11 +79,11 @@ if __name__ == "__main__":
     import pandas as pd
 	
     os.chdir('..')
-    genome_path = r'./mouse\genome_data\chr19.fa'
+    genome_path = r'./human_test/genome_data/chr11.fa'
 
-    refTSS_path = r'./mouse\cage_data\refTSS_v3.0_mouse_coordinate.mm10.bed'
+    refTSS_path = r'./human_test/cage_data/epd_human_hg38.bed'
 
-    chr_n = "chr19"
+    chr_n = "chr11"
 
     seed = 1
     window_size = 1000
@@ -91,7 +92,8 @@ if __name__ == "__main__":
 
     data = get_background(genome_path, refTSS_path, chr_n, seed, window_size, num_positions, 0)
 	
-    df = pd.DataFrame({'chr': ['chr19']*len(data),
+    df = pd.DataFrame({'chr': ['chr11']*len(data),
 					   'start_pos': list(data),
 					   })
+	
     df.to_csv('mouse_chr19_test.csv')

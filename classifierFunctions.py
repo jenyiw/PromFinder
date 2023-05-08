@@ -12,8 +12,10 @@ import os
 import pickle
 import numpy as np
 from sklearn.svm import SVC
-from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, confusion_matrix
 from sklearn.ensemble import RandomForestClassifier as RFC
+
+import matplotlib.pyplot as plt
 
 def create_svm(X, Y, output_path):
 	
@@ -95,10 +97,21 @@ def metrics(y_true, y_predict):
 			List containing evaluation scores
 	"""		
 	
+	y_int_pred = [int(x) for x in y_predict]
+	y_int_true = [int(x) for x in y_true]
+	
+	y_predict = y_int_pred
+	y_true = y_int_true
+	
 	acc = accuracy_score(y_true, y_predict)
 	f1 = f1_score(y_true, y_predict)
 	precision = precision_score(y_true, y_predict)
 	recall = recall_score(y_true, y_predict)
+	
+	conf_mat = confusion_matrix(y_true, y_predict)
+	
+	plt.imshow(conf_mat)
+	plt.show()
 	
 	metrics_dict = {'Accuracy': acc,
 				 'F1': f1,

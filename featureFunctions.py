@@ -77,7 +77,7 @@ def get_features(kmer_folder,
                         for j, k in enumerate(prop_values.keys()):
                             # print(prop_values[k][prop_seq.index(m)])
                             # print(feature_arr[i, n-1, j+1])
-                            feature_arr[i, n, j+1] = float(prop_values[k][prop_seq.index(m)]) + feature_arr[i, n-1, j+1]
+                            feature_arr[i, n, j+1] = float(prop_values[k][prop_seq.index(m)])
 				
             # feature_arr[i, 0] = gc_count/len(kmer)
             # # feature_arr[i, 1] = calculate_tm(kmer)

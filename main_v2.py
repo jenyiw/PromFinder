@@ -16,8 +16,17 @@ import dataFunctions as dF
 import featureFunctions as fF
 import phylopFunctions as pF
 import cnnFunctions
-import tkinter as tk
 
+import matplotlib.pyplot as plt
+
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Apr 11 17:21:03 2023
+
+@author: Jenyi
+
+Main function for running the classifiers
+"""
 
 class PromFinder():
 	
@@ -49,13 +58,9 @@ class PromFinder():
         """
 		  
         kmer_folder = os.path.join(folder_path, 'kmer_data')
-        kmer_folder = kmer_folder.replace('\\', '/')
         cage_path = os.path.join(folder_path, 'cage_data')
-        cage_path = cage_path.replace('\\', '/')
-        genome_path = os.path.join(folder_path, 'genome_data')	
-        genome_path = genome_path.replace('\\', '/')
+        genome_path = os.path.join(folder_path, 'genome_data')		
         phylop_path = os.path.join(folder_path, 'phyloP_data')
-        phylop_path = phylop_path.replace('\\', '/')
 		
         chromosome_list = dF.get_chrom_list(genome_path)
 		
@@ -108,7 +113,6 @@ class PromFinder():
         self.use_existing = use_existing
 		
         model_path = os.path.join(os.path.dirname(train_folder), 'models', f'{classifier}')
-        model_path = model_path.replace('\\', '/')
         if not os.path.exists(model_path):
             os.mkdir(model_path)
 			
@@ -130,7 +134,6 @@ class PromFinder():
 # 	            phylo_arr = train_phylo.reshape(-1,1)
             # train_data = np.concatenate((train_data, phylo_arr.reshape(-1,1)), axis=1)
             save_model_path = os.path.join(model_path, 'svm_model.sav')
-            save_model_path = save_model_path.replace('\\', '/')
             cF.create_svm(train_data, label_arr.reshape(-1,), save_model_path)			
 		
         elif classifier == 'dl_svm': 
@@ -146,9 +149,8 @@ class PromFinder():
             #concatenate data
            # sum_data = np.max(train_data, axis=1)
            # pred_label = np.concatenate((pred_label.reshape(-1,1), sum_data), axis=1)
-
+          #  print(x_out.shape)
            save_model_path = os.path.join(model_path, 'svm_model.sav')
-           save_model_path = save_model_path.replace('\\', '/')
            cF.create_svm(x_out, train_label.reshape(-1,), save_model_path)		
 
 			
@@ -156,25 +158,23 @@ class PromFinder():
 
              train_data = np.max(feature_arr, axis=1)			
              # train_data = np.concatenate((train_data, phylo_arr.reshape(-1,1)), axis=1)
-             save_model_path = os.path.join(model_path, 'rf_model.sav')	
-             save_model_path = save_model_path.replace('\\', '/')			
+             save_model_path = os.path.join(model_path, 'rf_model.sav')				
              cF.create_rf(train_data, label_arr.reshape(-1,), save_model_path)
 
         elif classifier == 'dl_rf': 
            train_data, train_label, val_data, val_label, train_phylo = dF.split_data(feature_arr, phylo_arr, label_arr, train_proportion=0.9, shuffle=True)
 
-           cnnFunctions.create_CNN(model_path,
-					   train_data, train_label.reshape(-1,1),
-					   val_data[0:1,...], val_label[0:1,...].reshape(-1,1))
+          #  cnnFunctions.create_CNN(model_path,
+					#    train_data, train_label.reshape(-1,1),
+					#    val_data[0:1,...], val_label[0:1,...].reshape(-1,1))
 			
            pred_label, x_out = cnnFunctions.predict_CNN(model_path, train_data, train_label.reshape(-1,1),
 												  feed_svm=True)
 
             #concatenate data
-           # sum_data = np.max(train_data, axis=1)           			
-           # pred_label = np.concatenate((pred_label.reshape(-1,1), sum_data), axis=1)
+          #  sum_data = np.max(train_data, axis=1)           			
+          #  pred_label = np.concatenate((pred_label.reshape(-1,1), sum_data), axis=1)
            save_model_path = os.path.join(model_path, 'rf_model.sav')
-           save_model_path = save_model_path.replace('\\', '/')
            cF.create_rf(x_out, train_label.reshape(-1,), save_model_path)		
 		   
     def predict(self, 
@@ -211,26 +211,21 @@ class PromFinder():
 		
         self.use_existing = use_existing
         output_path = os.path.join(test_folder, 'output')	
-        output_path = output_path.replace('\\', '/')
         test_data, test_phylo, test_label = self.create_kmer_data(test_folder, cage_file_name, train=False)	
 		
         print(f'Testing {classifier}...')	
 		
         if classifier == 'svm':
             test_data = np.max(test_data, axis=1)		
-            # test_data = np.concatenate((test_data, test_phylo.reshape(-1,1)), axis=1)		
             pred_label = cF.predict(test_data, os.path.join(model_path, 'svm_model.sav'))
-            pred_label = pred_label.replace('\\', '/')
 	
         elif classifier == 'rf':
             test_data = np.max(test_data, axis=1)			
-            # test_data = np.concatenate((test_data, test_phylo.reshape(-1,1)), axis=1)	
-            pred_label = cF.predict(test_data, os.path.join(model_path, 'rf_model.sav'))
-            pred_label = pred_label.replace('\\', '/')		
+            pred_label = cF.predict(test_data, os.path.join(model_path, 'rf_model.sav'))		
 	
         elif classifier == 'dl':
 		
-            pred_label, _ = cnnFunctions.predict_CNN(model_path, test_data, test_label.reshape(-1,1))
+            pred_label = cnnFunctions.predict_CNN(model_path, test_data, test_label.reshape(-1,1))
 
         elif classifier == 'dl_svm':
 		
@@ -238,10 +233,7 @@ class PromFinder():
 
 			
 			#run SVM
-            # sum_data = np.max(test_data, axis=1)			
-            # pred_label = np.concatenate((prob.reshape(-1,1), sum_data), axis=1)
             save_model_path = os.path.join(model_path, 'svm_model.sav')
-            save_model_path = save_model_path.replace('\\', '/')
             pred_label = cF.predict(x_out, save_model_path)
 
 
@@ -250,10 +242,7 @@ class PromFinder():
             prob, x_out = cnnFunctions.predict_CNN(model_path, test_data, test_label.reshape(-1,1))
 			
 			#run rf
-            # sum_data = np.max(test_data, axis=1)			
-            # pred_label = np.concatenate((prob.reshape(-1,1), sum_data), axis=1)
             save_model_path = os.path.join(model_path, 'rf_model.sav')
-            save_model_path = save_model_path.replace('\\', '/')
             pred_label = cF.predict(x_out, save_model_path)
 			
         metrics_list = cF.metrics(test_label, pred_label)
@@ -263,88 +252,23 @@ class PromFinder():
 			
         df = pd.DataFrame({'label': list(pred_label)})
 		
-        out_path = os.path.join(output_path, 'final_pred.csv')
-        out_path = out_path.replace('\\', '/')
-        df.to_csv(out_path)
-        # df.to_csv(os.path.join(output_path, 'final_pred.csv'))
+        df.to_csv(os.path.join(output_path, 'final_pred.csv'))
 
         return metrics_list, pred_label
+	
 
-# if __name__ == "__main__":
-#     # os.chdir('..')	
-#     # obj = PromFinder(kmer_size=1000)
-#     # obj.train(r'D:/CMU/semester2/03713/Bioinformatics Practicuum/03713_HMM_Model/human',
-#  	# 		  'D:/CMU/semester2/03713/Bioinformatics Practicuum/03713_HMM_Model/human/cage_data/refTSS_v3.0_human_coordinate.hg38.bed',
-#  	# 		  'D:/CMU/semester2/03713/Bioinformatics Practicuum/03713_HMM_Model/models/dl_svm',
-#  	# 		  use_existing=True)
-#     # metrics_list, pred_label = obj.predict(r'./mouse',
-# 	# 									  'mouse_chr19_test.csv',
-# 	# 										'dl_svm',
-# 	# 										r'./models/dl_svm',
-# 	# 										use_existing=True)
-
-#     # print(pred_label)	
-#     os.chdir('..')	
-#     obj = PromFinder(kmer_size=1000)
-#     obj.train('D:/CMU/semester2/03713/Bioinformatics Practicuum/03713_HMM_Model/human',
-#  			  'refTSS_v3.0_human_coordinate.hg38.bed',
-#  			  'dl_svm',
-#  			  use_existing=True)
-#     metrics_list, pred_label = obj.predict('D:/CMU/semester2/03713/Bioinformatics Practicuum/03713_HMM_Model/mouse',
-# 										  'mouse_chr19_test.csv',
-# 											'dl_svm',
-# 											'D:/CMU/semester2/03713/Bioinformatics Practicuum/03713_HMM_Model/models/dl_svm',
-# 											use_existing=True)
-
-#     print(pred_label)	
-#         # Generate the output string
-    
-
-
-def run_function():
+if __name__ == "__main__":
     os.chdir('..')	
     obj = PromFinder(kmer_size=1000)
-    obj.train('D:/CMU/semester2/03713/Bioinformatics Practicuum/03713_HMM_Model/human',
+    obj.train(r'./human',
  			  'refTSS_v3.0_human_coordinate.hg38.bed',
  			  'dl_svm',
  			  use_existing=True)
-    metrics_list, pred_label = obj.predict('D:/CMU/semester2/03713/Bioinformatics Practicuum/03713_HMM_Model/mouse',
+    metrics_list, pred_label = obj.predict(r'./mouse',
 										  'mouse_chr19_test.csv',
 											'dl_svm',
-											'D:/CMU/semester2/03713/Bioinformatics Practicuum/03713_HMM_Model/models/dl_svm',
+											r'./models/dl_svm',
 											use_existing=True)
 
-    
-    # your function code here
-    return pred_label
-
-# Create a Tkinter window
-root = tk.Tk()
-root.title("My Python Script Output")
-
-# Add a label to display the output
-output_label = tk.Label(root, text="")
-output_label.pack()
-
-# Define a button that generates and displays the output
-generate_button = tk.Button(root, text="Generate Output", command=lambda: output_label.config(text=run_function()))
-generate_button.pack()
-
-# Set the window position
-screen_width = root.winfo_screenwidth()
-screen_height = root.winfo_screenheight()
-x = int((screen_width - 600) / 2)
-y = int((screen_height - 600) / 2)
-root.geometry("600x600+{}+{}".format(x+50, y-50))
-
-# Periodically update the output in the label
-def update_output():
-    output = run_function()
-    output_label.config(text=output)
-    root.after(1000, update_output)  # update every second
-
-# Start updating the output
-update_output()
-
-# Start the Tkinter event loop
-root.mainloop()
+    print(np.unique(pred_label))	
+	
