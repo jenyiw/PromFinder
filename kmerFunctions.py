@@ -3,6 +3,8 @@
 Created on Tue Apr 11 14:44:15 2023
 
 @author: Jenyi
+
+Get list of kmers for region of interest
 """
 import os
 import re
