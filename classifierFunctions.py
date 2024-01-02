@@ -7,14 +7,12 @@ Created on Tue Apr 11 14:35:50 2023
 Functions for creating and training the classifiers
 """
 
-# from sklearn.preprocessing import StandardScaler
 import os
 import pickle
 import numpy as np
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, confusion_matrix
 from sklearn.ensemble import RandomForestClassifier as RFC
-
 import matplotlib.pyplot as plt
 
 def create_svm(X, Y, output_path):
@@ -85,7 +83,7 @@ def create_rf(X, Y, output_path):
 
 def metrics(y_true, y_predict):
 	"""
-	Calculate metrics
+	Calculate the following metrics: accuracy, F1, precision, recall and plot the confusion matrix
 	
 	Parameters:
 		y_true: numpy array
