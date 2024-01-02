@@ -37,20 +37,20 @@ def split_data(features_arr,
 		val_label: labels of validation data
     """
     indices_arr = np.arange(features_arr.shape[0])
-	
-	
 
     if shuffle:
         np.random.shuffle(indices_arr)
         features_arr = features_arr[np.argsort(indices_arr)]
         phylo_arr = phylo_arr[np.argsort(indices_arr)]		
         label_arr = label_arr[np.argsort(indices_arr)]
-		
+
+    #get number of training samples based on proportions			   
     if train_proportion != 1:
-	    split_index = int(len(features_arr)*train_proportion)
+	split_index = int(len(features_arr)*train_proportion)
     else:
-        split_index = int(len(features_arr))
-		
+        split_index = int(len(features_arr))	
+	    
+    #form training dataset and training labels		
     train_data = features_arr[:split_index]
     train_label = label_arr[:split_index]
     train_phylo = phylo_arr[:split_index]
@@ -69,13 +69,12 @@ def split_data(features_arr,
 def read_data(folder, chromosome_list, file_suffix):
 	
     """
-	Load data
+    Load and parse chromosome data
 	
-	Parameters:
-		folder: str
-			Folder where data is stored
-	Returns:
-		data_arr: numpy array
+    Parameters:
+	folder: str, folder where data is stored
+    Returns:
+	data_arr: numpy array, concatenated data
 
     """		
 	
@@ -94,8 +93,18 @@ def read_data(folder, chromosome_list, file_suffix):
 
     return data_arr	
 
-def checkdir(folder_path, classifier):
-
+def checkdir(folder_path:str, 
+	     classifier:str):
+    """
+    Check to see if all the required data folders are present
+	
+    Parameters:
+	folder_path: str, folder where data is stored
+ 	classifier:str, name of classifier
+    Returns:
+	None
+    """		
+		     
     #create output folders if does not exist
     output_path = os.path.join(folder_path, 'output', f'{classifier}')
     if not os.path.exists(output_path):
@@ -126,8 +135,19 @@ def checkdir(folder_path, classifier):
             os.mkdir(phylop_path)
             print('Please download PhyloP data.')
 			
-def check_specific_files(chromosome, kmer_path):
-
+def check_specific_files(chromosome:int, 
+			 kmer_path:str):
+	
+    """
+    Check to see if all the required data files are present
+	
+    Parameters:
+	folder_path: str, folder where data is stored
+ 	classifier:str, name of classifier
+    Returns:
+	pause: bool, whether to break analysis if file is not present
+    """	
+				 
     folder_path = os.path.dirname(kmer_path)
 	
     pause = False
@@ -141,7 +161,17 @@ def check_specific_files(chromosome, kmer_path):
 		
     return pause
 
-def get_chrom_list(genome_folder):
+def get_chrom_list(genome_folder:str):
+
+	"""
+    Check to see which chromosomes are available
+	
+    Parameters:
+	genome_folder: str, folder where chromosomal data is stored
+
+    Returns:
+	chr_list: List, list of existing chromosome files in data folder
+	"""
 	
 	files = os.listdir(genome_folder)
 	chr_list = []
