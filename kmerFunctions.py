@@ -39,13 +39,11 @@ def get_kmer_windows(genome_path,
     """	
 
     if train:
-        cage_df = pd.read_csv(os.path.join(cage_path, cage_file), delimiter='\t',
-					  header=None)
+        cage_df = pd.read_csv(os.path.join(cage_path, cage_file), delimiter='\t', header=None)
         chr_col = 0
 		
     else:
-        cage_df = pd.read_csv(os.path.join(cage_path, cage_file), delimiter=',',
-					  index_col=0)
+        cage_df = pd.read_csv(os.path.join(cage_path, cage_file), delimiter=',', index_col=0)
         chr_col = 'chr'	
 
 		
@@ -53,7 +51,7 @@ def get_kmer_windows(genome_path,
 #     pred_file = 'TSS.classification.hg38'
 #     pred_df = pd.read_csv(os.path.join(cage_path, pred_file), delimiter='\t')
 	
-	#get list of chromosomes
+    #get list of chromosomes
 
     chr_list_all = list(set(cage_df[chr_col].tolist()))
     chr_list = [x for x in chr_list_all if len(x) < 6] #Note there is a weird chrM
@@ -65,7 +63,7 @@ def get_kmer_windows(genome_path,
 		
         print(f'Working on chromosome: {ch}')
 		
-		#check if all files exist for that chromosome, or else skip
+	#check if all files exist for that chromosome, or else skip
         pause = dF.check_specific_files(ch, kmer_path)
 		
         if pause:
