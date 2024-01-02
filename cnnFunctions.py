@@ -2,25 +2,32 @@
 """
 Created on Thu Apr 13 11:50:07 2023
 
-@author: Asus
+@author: Jenyi
+
+Code for creating convolutional neural network, loading the datasets, training and testing the model
 """
+
+import os
+import numpy as np
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, TensorDataset
 
-import numpy as np
-import os
-
 
 class CNN(nn.Module):
+    """
+    Class for CNN model
+    
+    ""
+    
     def __init__(self):
         super().__init__()
         self.conv1 = nn.Conv1d(7,16,15)
         self.pool = nn.MaxPool1d(2)
         self.conv2 = nn.Conv1d(16,64,5)
-        # self.fc1 = nn.Linear(7616, 10)
+
         self.fc1 = nn.Linear(15616, 10)		
         self.fc2 = nn.Linear(10, 1)
         self.batchn1 = nn.BatchNorm1d(16)
@@ -41,12 +48,18 @@ class CNN(nn.Module):
 
 
 class hybrid_CNN(nn.Module):
+
+    """
+    Class for hybrid CNN model. Outputs features from last layer for use in SVM.
+    
+    ""
+	
     def __init__(self):
         super().__init__()
         self.conv1 = nn.Conv1d(7,16,15)
         self.pool = nn.MaxPool1d(2)
         self.conv2 = nn.Conv1d(16,64,5)
-        # self.fc1 = nn.Linear(7616, 10)
+
         self.fc1 = nn.Linear(15616, 10)		
         self.fc2 = nn.Linear(10, 1)
         self.batchn1 = nn.BatchNorm1d(16)
@@ -57,36 +70,77 @@ class hybrid_CNN(nn.Module):
         x = self.pool(self.batchn1(F.relu(self.conv1(x))))
         x = self.drop(x)
         x = self.pool(self.batchn2(F.relu(self.conv2(x))))	
-        x = self.drop(x)		
+        x = self.drop(x)
+	    
         x = torch.flatten(x, 1) # flatten all dimensions except batch
-        # self.fc1 = nn.Linear(x.shape[1], 10)	
         x_out = self.fc1(x)		
         x = self.fc2(x_out)		
-        x = F.sigmoid(x)		
+        x = F.sigmoid(x)
+	    
         return x, x_out
 
 
 def accuracy(pred_y, y):
-	    """Calculate accuracy."""
-	    y = np.rint(y.detach().numpy())
+    """
+    Calculate and return accuracy.
+    
+    """
+    y = np.rint(y.detach().numpy())
 
-	    return np.sum(pred_y == y) / len(y)
+    return np.sum(pred_y == y) / len(y)
 	
-def data_transform(train_data, train_label, batch_size:int=10, shuffle:bool=True):
-	
+def data_transform(train_data, 
+		   train_label, 
+		   batch_size:int=10, 
+		   shuffle:bool=True):
+    """
+    Get DataLoader for the nueral network.
+
+    Parameters:
+    	train_data: np.ndarray, data
+     	train_label: np.ndarray, labels 
+      	batchsize: int, batch size for neural network
+       	shuffle: bool,  whether to shuffle data
+    Returns:
+        train_loader: DataLoader object
+    
+    """	
+			   
+    #convert to tensors		
     train_data = np.moveaxis(train_data, -1, 1)
     train_data = torch.from_numpy(train_data).float()
     train_label = torch.from_numpy(train_label).float()
+
+    #convert to dataset and DataLoader			   
     train_dataset = TensorDataset(train_data, train_label)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle)
 
     return train_loader
 
 
-def test_model(model, loader,
-			   batch_size, 
-			   validation:bool=False,
-			   feed_svm:bool=False):
+def test_model(model, 
+	       loader,
+		batch_size, 
+		validation:bool=False,
+		feed_svm:bool=False):
+
+    """
+    Test CNN model.
+    
+    Parameters:
+    	model: NN pytorch model
+     	loader: pytorch DataLoader object containing testing data 
+      	batchsize: int, batch size for neural network
+       	validation: bool, whether it is a test dataset or validation dataset. Only affects data type
+	feed_svm: bool, additional option for hybrid SVM
+ 
+    Returns:
+        total_loss: float, total loss from testing
+	acc: float, accuracy of model
+ 	pred_list: np.array, list of predicted labels
+  	fl_list: np.array, raw prediction values for each sample before binarization
+    
+    """				
 
     criterion = nn.BCELoss()
 
@@ -100,30 +154,51 @@ def test_model(model, loader,
         for i, data in enumerate(loader):
 			
             inputs, labels = data
-			
+	
+            #run model			
             predicted, x_out = model(inputs)
-				
+		
+            #calculate losses				
             fl_list.append(x_out.detach().numpy())
             loss = criterion(predicted, labels)
             total_loss += loss / len(loader)
+		
+            #binarize predictions and calculate		
             predicted_np = predicted.detach().numpy()
             predicted_np[predicted_np >= 0.5] = 1
             predicted_np[predicted_np != 1] = 0
             acc += accuracy(predicted_np, labels) / len(loader)
-			
+	
+            #different formats for test vs validation data. Also has additional options to accommodate hybrid neural network			
             if not validation:
                 if not feed_svm:
                     pred_list[i] = predicted_np
                 else:
                     pred_list[i] = predicted.detach().numpy()
 
-
+   #set model back to train mode
     model.train()
 
     return total_loss, acc, pred_list, fl_list
 
 
-def train_model(model, train_loader, val_loader):
+def train_model(model, 
+		train_loader, 
+		val_loader):
+
+    """
+    Train CNN model.
+    
+    Parameters:
+    	model: NN pytorch model
+     	train_loader: pytorch DataLoader object containing training data 
+     	val_loader: pytorch DataLoader object containing validation data       
+ 
+    Returns:
+        model: NN pytorch trained model
+    
+    """	
+	
     criterion = nn.BCELoss()
 
     model.train()
@@ -175,25 +250,70 @@ def train_model(model, train_loader, val_loader):
     print('Finished Training')
     return model
 
-def save_model(model, save_path):		
-	            
-	   torch.save(model.state_dict(), os.path.join(save_path, 'model'))
+def save_model(model, 
+	       save_path:str):
 
-def create_CNN(save_path,
-			   train_data, train_label,
-			   val_data, val_label):
+    """ 
+    Save a trained CNN model.
+
+    Parameters:
+        model: NN pytorch model to be saved.
+	save_path: path to save model
+    """
+	            
+    torch.save(model.state_dict(), os.path.join(save_path, 'model'))
+
+def create_CNN(save_path:str,
+		train_data, 
+	       train_label,
+		val_data, 
+	       val_label):
+
+    """
+    Get data and initialize CNN models
+    
+    Parameters:
+    	save_path: path to save model
+    	train_data: np.ndarray, training data
+     	train_label: np.ndarray, training labels 
+    	val_data: np.ndarray, validation data
+     	val_label: np.ndarray, validation labels   
+ 
+    Returns:
+        None
+    
+    """				
 	
     print('Training model!')
-
+		       
+    #get data
     train_loader = data_transform(train_data, train_label)
     val_loader = data_transform(val_data, val_label)
-
+		       
+    #train model
     model = hybrid_CNN()
     model = train_model(model, train_loader, val_loader)
 
     save_model(model, save_path)
 	
-def predict_CNN(save_path, test_data, test_label, feed_svm:bool=False):
+def predict_CNN(save_path, 
+		test_data, 
+		test_label, 
+		feed_svm:bool=False):
+    """
+    Use a trained model for prediction.
+    
+    Parameters:
+    	save_path: path to load model
+    	test_data: np.ndarray, testing data
+     	test_label: np.ndarray, testing labels 
+      	feed_svm: bool, whether to run a hybrid model
+ 
+    Returns:
+        predicted: np.array, predicted labels
+	x_out_list: np.array, raw prediction values
+    
+    """					
 	
     if feed_svm == False:
         print('Testing model')
