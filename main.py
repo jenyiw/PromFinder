@@ -47,7 +47,8 @@ class PromFinder():
 		
 		
         """
-		  
+							 
+        #Correct path names		  
         kmer_folder = os.path.join(folder_path, 'kmer_data')
         kmer_folder = kmer_folder.replace('\\', '/')
         cage_path = os.path.join(folder_path, 'cage_data')
@@ -56,20 +57,17 @@ class PromFinder():
         genome_path = genome_path.replace('\\', '/')
         phylop_path = os.path.join(folder_path, 'phyloP_data')
         phylop_path = phylop_path.replace('\\', '/')
-		
+							 
+        #get list of available chromosomes		
         chromosome_list = dF.get_chrom_list(genome_path)
-		
+							 
+        #calculate features if features don't already exist			
         if not self.use_existing:
             kF.get_kmer_windows(genome_path, cage_path, cage_file, kmer_folder, window=self.kmer_size, train=train)
             fF.get_features(kmer_folder, window_size=self.kmer_size)
-            # for ch in chromosome_list:
-            #     positions_arr = dF.read_data(kmer_folder, [ch], 'positions')
-            #     pF.get_phyloP_arr(phylop_path, positions_arr, ch, kmer_folder, half_window=self.kmer_size//2)		
 
-	    #get features and labels
+	#get features and labels
         feature_arr = dF.read_data(kmer_folder, chromosome_list, 'features_all')
-        
-        # phylo_arr = dF.read_data(kmer_folder, chromosome_list, 'phylop')
 
         labels = dF.read_data(kmer_folder, chromosome_list, 'label')
         phylo_arr = np.zeros_like(labels)		
@@ -86,8 +84,8 @@ class PromFinder():
 			  use_existing:bool=True):
 	
         """
-		Train model
-		Parameters:
+	Train model
+	Parameters:
 			train_folder: str
 			   Path with the data folders
 		   cage_file: str
@@ -97,23 +95,25 @@ class PromFinder():
 		   use_existing: bool
 				 Whether to use existing pre-calculated features   
 	   
-	   Returns:
-		   None
-		
+	Returns:
+		   None	
 		
         """		
 		
         print('Calculating features...')
 	
         self.use_existing = use_existing
-		
+				  
+        #get model paths		
         model_path = os.path.join(os.path.dirname(train_folder), 'models', f'{classifier}')
         model_path = model_path.replace('\\', '/')
         if not os.path.exists(model_path):
             os.mkdir(model_path)
-			
+
+        #get training data				  
         feature_arr, phylo_arr, label_arr = self.create_kmer_data(train_folder, cage_file_name)
-		
+				  
+        #train and save classifiers		
         print(f'Training {classifier}...')			
         if classifier == 'dl':
 	   
@@ -127,8 +127,7 @@ class PromFinder():
         elif classifier == 'svm':
 			
             train_data = np.max(feature_arr, axis=1)
-# 	            phylo_arr = train_phylo.reshape(-1,1)
-            # train_data = np.concatenate((train_data, phylo_arr.reshape(-1,1)), axis=1)
+
             save_model_path = os.path.join(model_path, 'svm_model.sav')
             save_model_path = save_model_path.replace('\\', '/')
             cF.create_svm(train_data, label_arr.reshape(-1,), save_model_path)			
@@ -143,9 +142,6 @@ class PromFinder():
            pred_label, x_out = cnnFunctions.predict_CNN(model_path, train_data, train_label.reshape(-1,1),
 												  feed_svm=True)
 
-            #concatenate data
-           # sum_data = np.max(train_data, axis=1)
-           # pred_label = np.concatenate((pred_label.reshape(-1,1), sum_data), axis=1)
 
            save_model_path = os.path.join(model_path, 'svm_model.sav')
            save_model_path = save_model_path.replace('\\', '/')
@@ -176,7 +172,8 @@ class PromFinder():
            save_model_path = os.path.join(model_path, 'rf_model.sav')
            save_model_path = save_model_path.replace('\\', '/')
            cF.create_rf(x_out, train_label.reshape(-1,), save_model_path)		
-		   
+
+	
     def predict(self, 
 			  test_folder,
 			  cage_file_name,			  
@@ -210,10 +207,14 @@ class PromFinder():
         print('Calculating features...')
 		
         self.use_existing = use_existing
+				  
         output_path = os.path.join(test_folder, 'output')	
         output_path = output_path.replace('\\', '/')
+				  
+        #get test data				  
         test_data, test_phylo, test_label = self.create_kmer_data(test_folder, cage_file_name, train=False)	
-		
+				  
+        #Run classifiers on test data		
         print(f'Testing {classifier}...')	
 		
         if classifier == 'svm':
@@ -237,9 +238,7 @@ class PromFinder():
             prob, x_out = cnnFunctions.predict_CNN(model_path, test_data, test_label.reshape(-1,1))
 
 			
-			#run SVM
-            # sum_data = np.max(test_data, axis=1)			
-            # pred_label = np.concatenate((prob.reshape(-1,1), sum_data), axis=1)
+           #run SVM
             save_model_path = os.path.join(model_path, 'svm_model.sav')
             save_model_path = save_model_path.replace('\\', '/')
             pred_label = cF.predict(x_out, save_model_path)
@@ -249,9 +248,7 @@ class PromFinder():
 		
             prob, x_out = cnnFunctions.predict_CNN(model_path, test_data, test_label.reshape(-1,1))
 			
-			#run rf
-            # sum_data = np.max(test_data, axis=1)			
-            # pred_label = np.concatenate((prob.reshape(-1,1), sum_data), axis=1)
+	    #run rf
             save_model_path = os.path.join(model_path, 'rf_model.sav')
             save_model_path = save_model_path.replace('\\', '/')
             pred_label = cF.predict(x_out, save_model_path)
@@ -262,11 +259,11 @@ class PromFinder():
             print(f'{m}: {metrics_list[m]:.2f}')
 			
         df = pd.DataFrame({'label': list(pred_label)})
-		
+			
+        #save final predictions		
         out_path = os.path.join(output_path, 'final_pred.csv')
         out_path = out_path.replace('\\', '/')
         df.to_csv(out_path)
-        # df.to_csv(os.path.join(output_path, 'final_pred.csv'))
 
         return metrics_list, pred_label
 
